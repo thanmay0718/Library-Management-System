@@ -74,7 +74,6 @@ The architecture also provides a foundation for adding user management, authenti
 The following diagram illustrates the application architecture, including the API layer, service layer, data model, book management, and the planned user-management flow.
 
 ![Library Management System Architecture](docs/images/diagram.png)
-
 ### Architecture Layers
 
 1. **API Layer:** Receives HTTP requests and returns HTTP responses.
