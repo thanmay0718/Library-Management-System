@@ -1,51 +1,82 @@
 # 📚 Library Management System
 
-A RESTful **Library Management System** built using Java and Spring Boot, following a layered architecture to maintain clean separation of concerns, scalability, and maintainability.
+A RESTful Library Management System built with **Java, Spring Boot, Spring Security, JWT Authentication, Spring Data JPA, and MySQL**. The project demonstrates layered backend architecture, role-based access control, book inventory management, and a borrowing and returning workflow.
 
-The project implements book management operations using Spring Web, Spring Data JPA, DTOs, mapping, validation, and centralized exception handling. It is also designed to support future user registration, authentication, and role-based authorization.
+🔗 **GitHub Repository:** [library-management-system](https://github.com/thanmay0718/library-management-system)
 
 ---
 
 ## 📌 Table of Contents
 
-- [Project Overview](#-project-overview)
-- [Objectives](#-objectives)
-- [Technology Stack](#-technology-stack)
-- [System Architecture](#-system-architecture)
-- [Architecture Explanation](#-architecture-explanation)
+- [Overview](#-overview)
 - [Features](#-features)
-- [REST API Documentation](#-rest-api-documentation)
-- [Sample Request](#-sample-request)
-- [Validation and Exception Handling](#-validation-and-exception-handling)
+- [Technology Stack](#-technology-stack)
+- [Architecture](#-architecture)
 - [Project Structure](#-project-structure)
+- [Database Model](#-database-model)
+- [API Endpoints](#-api-endpoints)
 - [Getting Started](#-getting-started)
-- [Database Configuration](#-database-configuration)
-- [Testing the API](#-testing-the-api)
-- [Development Roadmap](#-development-roadmap)
-- [Best Practices](#-best-practices)
+- [Authentication and Authorization](#-authentication-and-authorization)
+- [Error Handling and Validation](#-error-handling-and-validation)
 - [Future Enhancements](#-future-enhancements)
+- [Author](#-author)
 
 ---
 
-## 🎯 Project Overview
+## 🎯 Overview
 
-The Library Management System is a backend application designed to manage book records through REST APIs.
+The Library Management System is a backend application designed to manage books, users, and library borrowing transactions through REST APIs.
 
-The application follows a layered architecture in which controllers handle HTTP requests, services implement business logic, repositories interact with the database, and entities represent persistent data.
+It follows a layered architecture that separates controllers, services, repositories, entities, DTOs, and security components. This separation improves maintainability, testing, and scalability.
 
-DTOs define API request and response structures, mapper classes convert between DTOs and entities, and centralized exception handling provides consistent error responses.
+The application uses JWT-based authentication to protect endpoints and role-based authorization to control access to administrative operations.
 
-The architecture also provides a foundation for adding user management, authentication, and role-based access control in future development.
+## ✨ Features
 
-## 🎯 Objectives
+### 🔐 Authentication and Security
 
-- Develop RESTful APIs for book management.
-- Implement Create, Read, Update, and Delete (CRUD) operations.
-- Follow a layered architecture using Spring Boot.
-- Separate API models from database entities using DTOs.
-- Implement request validation and exception handling.
-- Maintain readable, reusable, and maintainable code.
-- Prepare the application for future authentication and authorization features.
+- User registration and login APIs.
+- JWT-based authentication.
+- Password hashing using BCrypt.
+- Custom user authentication through Spring Security.
+- Stateless session management.
+- Role-based authorization using `USER` and `ADMIN` roles.
+- JWT authentication filter integrated into the Spring Security filter chain.
+
+### 📚 Book Management
+
+- Create, retrieve, update, and delete book records.
+- Manage book details such as title, author, ISBN, category, and copy counts.
+- Track total and available copies.
+- Use request and response DTOs to control API payloads.
+- Validate incoming book data.
+
+### 🔄 Loan Management
+
+- Borrow books through a REST API.
+- Return borrowed books.
+- Renew active loans.
+- View the authenticated user's loan history.
+- Retrieve overdue loans through an admin-restricted endpoint.
+- Track borrow dates, due dates, return dates, and loan status.
+- Check book availability when borrowing.
+- Use database locking when retrieving books for borrowing to help prevent concurrent inventory updates from conflicting.
+
+### 👤 User Management
+
+- Register users and manage user information.
+- Store user roles.
+- Retrieve user records through the service and repository layers.
+- Use DTOs and mappers to separate API data from entity objects.
+
+### ⚙️ Backend Engineering
+
+- Layered architecture with controllers, services, and repositories.
+- Spring Data JPA for database access.
+- ModelMapper configuration.
+- Centralized exception handling.
+- Custom resource-not-found exception.
+- Request validation and structured API responses.
 
 ---
 
@@ -56,98 +87,158 @@ The architecture also provides a foundation for adding user management, authenti
 | Java | Backend programming language |
 | Spring Boot | Application framework |
 | Spring Web | REST API development |
-| Spring Data JPA | Database persistence |
-| Hibernate | JPA implementation and ORM |
-| Jakarta Persistence | Entity mapping |
-| Jakarta Bean Validation | Input validation |
-| ModelMapper / custom mappers | DTO and entity conversion |
-| SLF4J | Application logging |
+| Spring Security | Authentication and authorization |
+| JWT | Token-based authentication |
+| Spring Data JPA | Persistence and repository abstraction |
+| Hibernate | ORM implementation |
+| MySQL | Relational database |
 | Maven | Dependency and build management |
-| Relational database | Persistent storage |
-
-*Use the actual database, dependencies, and mapper implementation configured in your project.*
+| Jakarta Validation | Request validation |
+| ModelMapper | Object mapping |
+| BCrypt | Password hashing |
+| Postman | API testing |
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ Architecture
 
-The following diagram illustrates the application architecture, including the API layer, service layer, data model, book management, and the planned user-management flow.
+The application follows a layered architecture.
 
-![Library Management System Architecture](docs/images/diagram.png)
+```mermaid
+flowchart TD
+    A["API Client / Postman"] --> B["Spring Security Filter Chain"]
+    B --> C["JWT Authentication Filter"]
+    C --> D["Controllers"]
+
+    D --> E["Auth Service"]
+    D --> F["Book Service"]
+    D --> G["User Service"]
+    D --> H["Loan Service"]
+
+    E --> I["User Repository"]
+    F --> J["Book Repository"]
+    G --> I
+    H --> K["Loan Repository"]
+    H --> J
+    H --> I
+
+    I --> L[("MySQL Database")]
+    J --> L
+    K --> L
+
+    D --> M["Request / Response DTOs"]
+    F --> N["Book Mapper"]
+    G --> O["User Mapper"]
+
+    D --> P["Global Exception Handler"]
+```
+
 ### Architecture Layers
 
-1. **API Layer:** Receives HTTP requests and returns HTTP responses.
-2. **Service Layer:** Implements business logic and coordinates application operations.
-3. **Repository Layer:** Performs database operations through Spring Data JPA.
-4. **Data Model Layer:** Contains entities, DTOs, and mapper classes.
-5. **Exception Handling:** Handles application errors and produces consistent responses.
+- **Controller:** Exposes REST endpoints and handles HTTP requests.
+- **Service:** Contains business logic for authentication, books, users, and loans.
+- **Repository:** Provides database operations through Spring Data JPA.
+- **Entity:** Represents persistent domain objects.
+- **DTO:** Defines request and response payloads.
+- **Mapper:** Converts between entities and DTOs.
+- **Security:** Handles JWT validation, authentication, and access control.
+- **Exception handling:** Provides centralized handling for application errors.
 
 ---
 
-## 🔍 Architecture Explanation
+## 📁 Project Structure
 
-### 1. API Client
+```text
+library-management-system/
+├── backend/
+│   ├── src/
+│   │   └── main/
+│   │       ├── java/
+│   │       │   └── com/library/management/
+│   │       │       ├── ManagementApplication.java
+│   │       │       │
+│   │       │       ├── config/
+│   │       │       │   ├── ModelMapperConfig.java
+│   │       │       │   ├── PasswordEncoderConfig.java
+│   │       │       │   ├── SecurityBeansConfig.java
+│   │       │       │   └── SecurityConfig.java
+│   │       │       │
+│   │       │       ├── controller/
+│   │       │       │   ├── AuthController.java
+│   │       │       │   ├── BookController.java
+│   │       │       │   ├── LoanController.java
+│   │       │       │   └── UserController.java
+│   │       │       │
+│   │       │       ├── entity/
+│   │       │       │   ├── Book.java
+│   │       │       │   ├── Loan.java
+│   │       │       │   ├── LoanStatus.java
+│   │       │       │   ├── Role.java
+│   │       │       │   └── User.java
+│   │       │       │
+│   │       │       ├── exception/
+│   │       │       │   ├── GlobalExceptionHandler.java
+│   │       │       │   └── ResourceNotFoundException.java
+│   │       │       │
+│   │       │       ├── mapper/
+│   │       │       │   ├── BookMapper.java
+│   │       │       │   └── UserMapper.java
+│   │       │       │
+│   │       │       ├── payload/
+│   │       │       │   ├── AuthResponseDTO.java
+│   │       │       │   ├── BookRequestDTO.java
+│   │       │       │   ├── BookResponseDTO.java
+│   │       │       │   ├── LoanRequestDTO.java
+│   │       │       │   ├── LoanResponseDTO.java
+│   │       │       │   ├── LoginRequestDTO.java
+│   │       │       │   ├── UserRequestDTO.java
+│   │       │       │   └── UserResponseDTO.java
+│   │       │       │
+│   │       │       ├── repository/
+│   │       │       │   ├── BookRepository.java
+│   │       │       │   ├── LoanRepository.java
+│   │       │       │   └── UserRepository.java
+│   │       │       │
+│   │       │       ├── security/
+│   │       │       │   ├── CustomUserDetailsService.java
+│   │       │       │   ├── JwtAuthenticationFilter.java
+│   │       │       │   └── JwtService.java
+│   │       │       │
+│   │       │       └── service/
+│   │       │           ├── AuthService.java
+│   │       │           ├── BookService.java
+│   │       │           ├── LoanService.java
+│   │       │           ├── UserService.java
+│   │       │           └── ServiceImpl/
+│   │       │               ├── BookServiceImpl.java
+│   │       │               ├── LoanServiceImpl.java
+│   │       │               └── UserServiceImpl.java
+│   │       │
+│   │       └── resources/
+│   │           └── application.properties
+│   │
+│   ├── pom.xml
+│   └── mvnw.cmd
+│
+├── docs/
+│   └── images/
+│
+└── README.md
+```
 
-The API client can be Postman, a frontend application, or another application that communicates with the backend.
+*The tree documents the Java source files you currently have. The resources and Maven entries show the expected locations; confirm them against your repository if their names or locations have changed.*
 
-It sends HTTP requests to endpoints exposed by the application.
+---
 
-Examples:
+## 🗄️ Database Model
 
-- `POST` — Create a book.
-- `GET` — Retrieve books.
-- `PUT` — Update a book.
-- `DELETE` — Delete a book.
+The application uses relational entities connected through JPA relationships.
 
-### 2. Book Controller
+### Book
 
-The controller receives incoming HTTP requests and delegates processing to the service layer.
+Represents the library's book inventory.
 
-Responsibilities:
-
-- Define REST endpoints.
-- Bind incoming request data.
-- Trigger request validation.
-- Call the appropriate service methods.
-- Return responses with suitable HTTP status codes.
-
-The controller should not contain database queries or complex business logic.
-
-### 3. Book Service
-
-The service layer contains the application's business logic.
-
-For example, when updating a book, the service should verify that the book exists before applying changes.
-
-Responsibilities:
-
-- Process book-management operations.
-- Apply business rules.
-- Coordinate repository and mapper calls.
-- Handle not-found conditions.
-- Maintain consistency between book fields.
-
-The `BookService` interface defines the operations, while `BookServiceImpl` provides their implementation, if structured that way in the project.
-
-### 4. Book Repository
-
-The repository layer communicates with the database using Spring Data JPA.
-
-Typical operations include:
-
-- Saving a book.
-- Retrieving all books.
-- Finding a book by ID.
-- Updating a persisted record.
-- Deleting a book.
-
-Spring Data JPA provides common persistence operations through repository interfaces, reducing the need to write repetitive database-access code.
-
-### 5. Book Entity
-
-The `Book` entity represents a book record in the database.
-
-Typical fields include:
+Typical attributes include:
 
 - `id`
 - `title`
@@ -157,239 +248,89 @@ Typical fields include:
 - `totalCopies`
 - `availableCopies`
 
-The entity is mapped to a database table using Jakarta Persistence annotations.
+### User
 
-### 6. Data Transfer Objects (DTOs)
+Represents a registered application user.
 
-DTOs define the data exchanged between the client and backend.
+Includes identity and login information, a hashed password, and a role used for authorization.
 
-- `BookRequestDTO` represents incoming book data.
-- `BookResponseDTO` represents book data returned by the API.
+### Loan
 
-DTOs help prevent the API from exposing internal persistence details and allow request validation to be defined independently of entity structure.
+Represents a book borrowing transaction.
 
-### 7. Book Mapper
+Includes:
 
-The mapper converts between the `Book` entity and its DTO representations.
+- The associated user and book.
+- Borrow date and due date.
+- Return date, when returned.
+- Loan status.
 
-For example:
+### Enumerations
 
-- Request DTO → Book entity.
-- Book entity → Response DTO.
+- `Role`: defines the application's user roles, including `USER` and `ADMIN`.
+- `LoanStatus`: tracks loan states such as `BORROWED`, `RETURNED`, and `OVERDUE`.
 
-Keeping conversion logic in a mapper avoids repeating field-copying code across controllers and services.
+### Relationships
 
-### 8. Exception Handling
-
-The global exception handler centralizes application error handling using Spring's `@RestControllerAdvice`.
-
-For example, if a requested book does not exist, the service can throw `ResourceNotFoundException`. The exception handler can translate it into an HTTP `404 Not Found` response.
-
-This approach makes error handling more consistent and keeps controllers clean.
-
-### 9. User Management — Planned Extension
-
-The architecture also includes components intended for future user management:
-
-- `User` entity.
-- User request and response DTOs.
-- `UserMapper`.
-- `UserRepository`.
-- `UserService`.
-
-These components can later support registration, password hashing, authentication, and role-based authorization.
-
-**Security note:** Passwords should never be stored in plain text. Use a password-hashing mechanism such as BCrypt and enforce authorization rules on the backend.
+- One user can have multiple loan records.
+- One book can appear in multiple loan records over time.
+- Each loan refers to one user and one book.
 
 ---
 
-## ✨ Features
+## 🔌 API Endpoints
 
-### Implemented or currently developed
+The following loan endpoints are implemented in the current application.
 
-- Book entity and repository.
-- Book CRUD operations.
-- Service interface and implementation.
-- Request and response DTOs.
-- DTO-to-entity mapping.
-- Request validation.
-- Centralized exception handling.
-- Structured application logging.
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| POST | `/api/loans/borrow` | Authenticated | Borrow a book |
+| PUT | `/api/loans/{loanId}/return` | Loan owner | Return a borrowed book |
+| PUT | `/api/loans/{loanId}/renew` | Loan owner | Renew an eligible loan |
+| GET | `/api/loans/my-loans` | Authenticated | View the current user's loans |
+| GET | `/api/loans/overdue` | Admin | Retrieve overdue loans |
 
-### Planned features
+### Authentication APIs
 
-- User registration.
-- Authentication using Spring Security.
-- Role-based authorization.
-- Borrowing and returning books.
-- Pagination, sorting, and filtering.
-- Automated testing.
-- API documentation.
+Authentication endpoints are exposed through `AuthController.java`. User registration is also exposed through `UserController.java`.
 
-The status of each feature should reflect the code currently available in the repository.
+- Authentication routes use the `/api/auth/**` namespace.
+- User registration is permitted through `POST /api/users/register`.
 
----
+Check the controller annotations for the exact login and registration paths and request formats.
 
-## 🔗 REST API Documentation
+### Book APIs
 
-The following table illustrates a typical REST API design. Confirm the actual endpoint mappings in `BookController` before using these routes.
+`BookController.java` exposes book-management operations. Refer to its `@RequestMapping` and method-level `@GetMapping`, `@PostMapping`, `@PutMapping`, and `@DeleteMapping` annotations for the exact paths.
 
-| HTTP Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/books` | Add a new book |
-| GET | `/api/books` | Retrieve all books |
-| GET | `/api/books/{id}` | Retrieve a book by ID |
-| PUT | `/api/books/{id}` | Update a book |
-| DELETE | `/api/books/{id}` | Delete a book |
+### Example: Borrow a Book
 
-### Expected HTTP Status Codes
+**Request**
 
-| Status | Meaning |
-|---|---|
-| `200 OK` | Request completed successfully |
-| `201 Created` | Resource created successfully |
-| `204 No Content` | Request succeeded without a response body |
-| `400 Bad Request` | Invalid request data |
-| `404 Not Found` | Requested resource does not exist |
-| `500 Internal Server Error` | Unexpected server-side error |
-
-The exact status codes depend on how each controller endpoint is implemented.
-
----
-
-## 📦 Sample Request
-
-### Add a Book
-
-**Endpoint:** `POST /api/books`
-
-**Content-Type:** `application/json`
-
-Example request body:
+```http
+POST /api/loans/borrow
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
 
 ```json
 {
-  "title": "Clean Code",
-  "author": "Robert C. Martin",
-  "isbn": "9780132350884",
-  "category": "Software Engineering",
-  "totalCopies": 5,
-  "availableCopies": 5
+  "bookId": 302
 }
 ```
 
-The JSON fields must match the actual `BookRequestDTO`.
+The request uses the authenticated user's identity and the requested book ID. The server checks eligibility and availability before creating a loan.
 
-If the application calculates `availableCopies` automatically, that field should instead be managed by the backend.
+### Example: View My Loans
 
-### Example Validation Rules
-
-- Title must not be blank.
-- Author must not be blank.
-- Total copies must not be negative.
-- Available copies must not be negative.
-- Available copies must not exceed total copies.
-
-The final rules should match the validations and business logic implemented in the project.
-
----
-
-## 🛡️ Validation and Exception Handling
-
-### Request Validation
-
-Jakarta Bean Validation annotations can validate request data before the service processes it.
-
-Common annotations include:
-
-| Annotation | Purpose |
-|---|---|
-| `@NotBlank` | Rejects null, empty, or whitespace-only text |
-| `@NotNull` | Rejects null values |
-| `@Positive` | Requires a positive number |
-| `@PositiveOrZero` | Allows zero or positive values |
-| `@Size` | Restricts the length of text or collections |
-| `@Valid` | Triggers validation of a request object |
-
-For example, a request with a blank title or an invalid copy count should be rejected with HTTP `400 Bad Request` when the corresponding validation rules are configured.
-
-### Global Exception Handling
-
-A centralized exception handler can process:
-
-- `ResourceNotFoundException`.
-- `MethodArgumentNotValidException`.
-- Other expected application exceptions.
-
-Error responses should be consistent and useful. Internal stack traces, database credentials, and sensitive implementation details should not be exposed to clients.
-
----
-
-## 📁 Project Structure
-
-The following structure illustrates a recommended package organization. Adjust it to match your actual source files.
-
-```text
-library-management-system/
-│
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── com/library/management/
-│   │   │       ├── config/
-│   │   │       │   └── PasswordEncoderConfig.java
-│   │   │       │
-│   │   │       ├── controller/
-│   │   │       │   └── BookController.java
-│   │   │       │
-│   │   │       ├── dto/
-│   │   │       │   ├── BookRequestDTO.java
-│   │   │       │   └── BookResponseDTO.java
-│   │   │       │
-│   │   │       ├── entity/
-│   │   │       │   ├── Book.java
-│   │   │       │   └── User.java
-│   │   │       │
-│   │   │       ├── enums/
-│   │   │       │   └── Role.java
-│   │   │       │
-│   │   │       ├── exception/
-│   │   │       │   ├── GlobalExceptionHandler.java
-│   │   │       │   └── ResourceNotFoundException.java
-│   │   │       │
-│   │   │       ├── mapper/
-│   │   │       │   ├── BookMapper.java
-│   │   │       │   └── UserMapper.java
-│   │   │       │
-│   │   │       ├── repository/
-│   │   │       │   ├── BookRepository.java
-│   │   │       │   └── UserRepository.java
-│   │   │       │
-│   │   │       ├── service/
-│   │   │       │   ├── BookService.java
-│   │   │       │   ├── BookServiceImpl.java
-│   │   │       │   └── UserService.java
-│   │   │       │
-│   │   │       └── ManagementApplication.java
-│   │   │
-│   │   └── resources/
-│   │       └── application.properties
-│   │
-│   └── test/
-│       └── java/
-│
-├── docs/
-│   └── images/
-│       └── diagram.png
-│
-├── .gitignore
-├── mvnw
-├── mvnw.cmd
-├── pom.xml
-└── README.md
+```http
+GET /api/loans/my-loans
+Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
-Some classes in this structure may be planned rather than implemented. Keep the repository structure and README synchronized as development progresses.
+The response includes loan details such as the loan ID, book ID, book title, borrow date, due date, return date, and status.
+
+> Exact response fields and error formats depend on the current DTO and exception-handler implementations.
 
 ---
 
@@ -397,166 +338,160 @@ Some classes in this structure may be planned rather than implemented. Keep the 
 
 ### Prerequisites
 
-Install the following tools:
+Install the following:
 
-- Java Development Kit compatible with the version in `pom.xml`.
-- Maven, or use the included Maven Wrapper.
-- A supported relational database configured for the application.
+- JDK 17 or a compatible version required by your Maven configuration.
+- MySQL Server.
 - Git.
-- Postman or another REST API client.
+- An IDE such as IntelliJ IDEA or VS Code.
+- Postman for API testing.
 
-### Step 1: Clone the Repository
+### 1. Clone the Repository
 
 ```bash
-git clone <YOUR_REPOSITORY_URL>
-cd <YOUR_REPOSITORY_DIRECTORY>
+git clone https://github.com/thanmay0718/library-management-system.git
+cd library-management-system
 ```
 
-Replace the placeholders with your actual Git repository URL and directory name.
+### 2. Configure the Database
 
-### Step 2: Configure the Database
+Create a MySQL database for the application.
 
-Create a database for the application and configure the connection properties.
+```sql
+CREATE DATABASE library_management;
+```
 
-See the [Database Configuration](#-database-configuration) section.
+Configure the database connection in `backend/src/main/resources/application.properties`.
 
-### Step 3: Run the Application
+Example configuration:
 
-On Windows PowerShell:
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/library_management
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+
+spring.jpa.hibernate.ddl-auto=update
+```
+
+Ensure the application includes the required MySQL driver and JPA dependencies in `pom.xml`. Adjust the configuration to match your existing project.
+
+**Security note:** Do not commit database passwords, JWT signing secrets, or other credentials to GitHub. Use environment variables or a local configuration file excluded from version control.
+
+### 3. Run the Backend
+
+On Windows, open PowerShell in the repository root and run:
 
 ```powershell
+cd backend
 .\mvnw.cmd spring-boot:run
 ```
 
-On macOS or Linux:
-
-```bash
-./mvnw spring-boot:run
-```
-
-Alternatively, if Maven is installed:
+If the Maven wrapper is unavailable, use an installed Maven distribution:
 
 ```bash
 mvn spring-boot:run
 ```
 
-### Step 4: Test the API
+The application commonly runs at:
 
-Once the application starts successfully, send requests to the configured endpoints using Postman or curl.
-
-Spring Boot commonly uses port `8080` by default, unless the application configuration specifies a different port.
-
----
-
-## 🗄️ Database Configuration
-
-Database settings should be configured through environment variables or a local configuration file excluded from Git.
-
-Example `application.properties` settings:
-
-```properties
-spring.datasource.url=${DB_URL}
-spring.datasource.username=${DB_USERNAME}
-spring.datasource.password=${DB_PASSWORD}
+```text
+http://localhost:8080
 ```
 
-Configure the correct database driver and JPA properties for your environment.
+Use the port configured in `application.properties` if it differs.
 
-**Never commit database passwords, API keys, tokens, or other secrets to a public repository.**
+### 4. Test with Postman
 
----
+1. Register a user using the registration endpoint.
+2. Log in using the configured authentication endpoint.
+3. Copy the JWT token from the authentication response.
+4. Send the token in the `Authorization` header:
 
-## 🧪 Testing the API
+```http
+Authorization: Bearer YOUR_JWT_TOKEN
+```
 
-Recommended manual test cases:
-
-1. Create a book using valid input.
-2. Submit a book with a blank title.
-3. Submit a book with an invalid copy count.
-4. Retrieve all books.
-5. Retrieve an existing book by ID.
-6. Request a book ID that does not exist.
-7. Update an existing book.
-8. Delete an existing book.
-9. Verify that deleted records are no longer returned.
-10. Confirm that invalid requests return meaningful error responses.
-
-As the project grows, add automated unit tests for service logic and integration tests for controller and persistence behavior.
+5. Test book operations according to your user's role.
+6. Borrow an available book.
+7. Retrieve your loans, then test returning and renewing an eligible loan.
 
 ---
 
-## 🗺️ Development Roadmap
+## 🔒 Authentication and Authorization
 
-- [x] Create the Book entity.
-- [x] Implement the Book repository.
-- [x] Implement book CRUD operations.
-- [x] Create request and response DTOs.
-- [x] Implement DTO/entity mapping.
-- [x] Add request validation.
-- [x] Add centralized exception handling.
-- [ ] Complete user registration.
-- [ ] Integrate secure password hashing.
-- [ ] Implement authentication with Spring Security.
-- [ ] Implement role-based authorization.
-- [ ] Add unit and integration tests.
-- [ ] Add OpenAPI/Swagger documentation.
-- [ ] Add pagination, sorting, and filtering.
-- [ ] Implement book borrowing and returning.
-- [ ] Add transaction-safe inventory management.
-- [ ] Prepare deployment documentation.
+The backend uses Spring Security with JWT authentication.
 
-Update this checklist whenever a feature is completed or its implementation status changes.
+The authentication flow is:
+
+1. The client submits login credentials.
+2. The application authenticates the user.
+3. The server issues a JWT.
+4. The client sends the token with subsequent protected requests.
+5. `JwtAuthenticationFilter` validates the token and establishes the security context.
+6. Spring Security checks authorization rules before allowing access.
+
+### Security Components
+
+| Component | Responsibility |
+|---|---|
+| `SecurityConfig.java` | Configures endpoint access and the security filter chain |
+| `JwtService.java` | Handles JWT-related operations |
+| `JwtAuthenticationFilter.java` | Processes incoming JWTs |
+| `CustomUserDetailsService.java` | Loads user details for authentication |
+| `PasswordEncoderConfig.java` | Configures password hashing |
+| `Role.java` | Defines application roles |
+
+The application uses stateless session management, meaning the server does not rely on an HTTP session to retain the user's authentication between requests.
+
+Administrative operations, including the overdue-loans endpoint, are restricted by authorization rules.
 
 ---
 
-## 💡 Best Practices
+## 🛡️ Error Handling and Validation
 
-This project follows or aims to follow these backend development practices:
+The project includes centralized exception handling and a custom resource-not-found exception.
 
-- **Separation of concerns:** Keep controllers, services, repositories, and mappers focused on their responsibilities.
-- **Dependency injection:** Prefer constructor injection for required dependencies.
-- **DTO-based APIs:** Avoid exposing persistence entities unnecessarily.
-- **Input validation:** Validate incoming request data at the API boundary.
-- **Centralized error handling:** Keep error responses consistent.
-- **Meaningful logging:** Log useful diagnostic information without recording sensitive data.
-- **Secure configuration:** Keep secrets outside version control.
-- **Maintainable code:** Use meaningful names, small methods, and clear interfaces.
-- **Automated testing:** Test normal behavior, invalid input, and failure scenarios.
+- `GlobalExceptionHandler.java` handles application exceptions centrally.
+- `ResourceNotFoundException.java` represents missing resources.
+- Request DTOs can enforce validation rules.
+- Service-layer checks enforce business rules, such as loan ownership and loan eligibility.
+
+These mechanisms help return meaningful errors and keep validation logic separate from controller code.
 
 ---
 
 ## 🔮 Future Enhancements
 
-Potential extensions include:
+Potential improvements for future iterations include:
 
-- User registration and login.
-- Spring Security with JWT-based authentication.
-- Role-based access control for administrators and library members.
-- Book search by title, author, ISBN, or category.
-- Pagination and sorting.
-- Borrowing and returning workflows.
-- Due-date tracking and overdue notifications.
-- Fine calculation and borrowing history.
-- API documentation with Swagger/OpenAPI.
-- Docker-based deployment and CI/CD.
-- Monitoring, structured logging, and production-ready error responses.
+- Automatic fine calculation for overdue books.
+- Pagination, sorting, and advanced book search.
+- Loan limits and borrowing eligibility policies.
+- Admin dashboard and library statistics.
+- Automated overdue notifications.
+- Unit and integration testing.
+- API documentation with Swagger / OpenAPI.
+- Docker-based deployment.
+- CI/CD integration.
+- Production database migration management.
 
-These are proposed enhancements, not claims that they are already implemented.
+These are planned enhancements, not claims that the features are already implemented.
 
 ---
 
-## 🤝 Contributing
+## 👨‍💻 Author
 
-Suggestions and improvements are welcome, especially those related to API design, validation, testing, security, and maintainability.
+**Thanmay**
 
-Before submitting changes, ensure the application builds successfully and the relevant tests pass.
+- GitHub: [@thanmay0718](https://github.com/thanmay0718)
+- Project: [Library Management System](https://github.com/thanmay0718/library-management-system)
 
 ---
 
 ## 📄 License
 
-No license has been specified yet. Add a license file if you intend to distribute or allow others to reuse this project.
+Add a license file to the repository if you intend to distribute this project under an open-source license.
 
 ---
 
-**Built with Java and Spring Boot as a hands-on backend engineering project.**
+*Built as a backend engineering project to practice Java, Spring Boot, REST API development, relational database design, and secure application architecture.*
